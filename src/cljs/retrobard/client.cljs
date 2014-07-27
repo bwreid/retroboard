@@ -63,6 +63,15 @@
             ((apply-action action) state))
           initial-state actions))
 
+
+(defn column-placeholder []
+  (first (shuffle ["What Went Well"
+                   "What Needs Improvement"
+                   "Action Items"
+                   "Keep Doing"
+                   "Start Doing"
+                   "Stop Doing"])))
+
 (defn create-column-button [connection owner]
   (reify
     om/IInitState
@@ -73,10 +82,10 @@
                 (when (seq header)
                   (new-column (om/value connection) (temprid) header)
                   (om/set-state! owner :header "")))]
-        (dom/div #js {:id "new-column"}
-                 (dom/input #js {:name "new-column"
+        (dom/div #js {:id "create-column"}
+                 (dom/input #js {:id "new-column" :name "new-column"
                                  :type "text"
-                                 :placeholder "New Column"
+                                 :placeholder "Add a new column"
                                  :value header
                                  :onKeyUp (fn [e]
                                             (when (= 13 (.-keyCode e))
@@ -84,10 +93,9 @@
                                  :onChange (fn [e]
                                              (om/set-state! owner :header
                                                             (.. e -target -value)))})
-                 (dom/button #js {:onClick create-column
-                                  :className "add-column"
-                                  :disabled (empty? header)}
-                             "Add column"))))))
+                 (dom/span #js {:onClick create-column
+                                :className "add-column"
+                                :disabled (empty? header)}))))))
 
 (defn delete-column-button [app owner]
   (reify
@@ -99,6 +107,12 @@
         (dom/div #js {:onClick delete-column
                          :className "delete-column"}
                     "Delete Column")))))
+
+(defn note-placeholder []
+  (first (shuffle ["I just think that..."
+                   "What if we..."
+                   "Why do we always..."
+                   "Maybe next time we could..."])))
 
 (defn create-note-button [app owner]
   (reify
@@ -113,7 +127,7 @@
                             (om/set-state! owner :text "")))]
         (dom/div nil
                  (dom/input #js {:id "new-note" :name "new-note"
-                                 :placeholder "Enter your note here"
+                                 :placeholder (note-placeholder)
                                  :type "text"
                                  :value text
                                  :onKeyUp (fn [e]
@@ -149,7 +163,7 @@
                          :className "vote"}
                     "✚")))))
 
-(defn change-env [app env-id]
+(defn change-env [env-id]
   (set! (.-pathname js/location) (str "e/" env-id)))
 
 (defn create-environment-button [app owner]
@@ -165,7 +179,6 @@
                       :className "new-environment"
                       :title "New Environment"}
                     "✚")))))
-
 
 (defn display [show]
   (if show
@@ -196,8 +209,9 @@
                       :style (display editing)
                       :value text
                       :onChange #(handle-change % data edit-key owner)
-                      :onKeyPress #(when (== (.-keyCode %) 13)
-                                     (end-edit text owner on-edit))
+                      :onKeyUp #(case (.-keyCode %)
+                                     13 (end-edit text owner on-edit)
+                                     nil)
                       :onBlur (fn [e]
                                 (when (om/get-state owner :editing)
                                   (end-edit text owner on-edit)))})
@@ -246,6 +260,15 @@
                  (om/build delete-column-button {:connection connection
                                                  :column-id id}))))))
 
+
+(defn error-handler [app]
+  (let [error-chan (chan)]
+    (sub (get-in app [:connection :incoming]) :error error-chan)
+    (go-loop []
+             (let [error (:error (<! error-chan))]
+               (case error
+                 :no-such-environment (om/update! app :connected :no-such-environment))))))
+
 (defn view [app owner]
   (reify
     om/IInitState
@@ -253,12 +276,14 @@
     om/IWillMount
     (will-mount [_]
       (let [action-chan (chan)]
+        (error-handler app)
         (if (:id app)
           (put! (get-in (if (om/rendering?) app @app) [:connection :to-send])
                 {:cmd :register :action (:id app)}))
         (sub (get-in app [:connection :incoming]) :cmds action-chan)
         (go-loop []
                  (let [actions (:commands (<! action-chan))]
+                   (om/update! app :connected :connected)
                    (om/transact! app :state (partial apply-actions actions))
                    (recur)))))
     om/IRenderState
@@ -267,17 +292,19 @@
             columns (:state app)]
         (dom/div #js {:className "main"}
                  (if (:id app)
-                   (dom/div nil
-                            (dom/div #js {:id "new-environment-or-column"}
-                                     (om/build create-column-button (:connection app))
-                                     (om/build create-environment-button app))
-                            (apply dom/div #js {:className "columns"}
-                                   (map (fn [col]
-                                          (om/build column-view {:connection connection
-                                                                 :column col}))
-                                        (sort-by first columns))))
-                   (dom/div nil
-                            (om/build create-environment-button app))))))))
+                   (case (:connected app)
+                     nil
+                     (dom/h3 nil "Connecting...")
+                     :no-such-environment
+                     (dom/h3 nil "Sorry. That environment doesn't exist. Why not make a new one?")
+                     :connected
+                     (dom/div #js {:className "board"}
+                              (om/build create-column-button (:connection app))
+                              (apply dom/div #js {:id "columns"}
+                                     (map (fn [col]
+                                            (om/build column-view {:connection connection
+                                                                   :column col}))
+                                          (sort-by first columns)))))))))))
 
 (def app-state (atom {:state {} :connection (web-socket)}))
 

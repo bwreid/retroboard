@@ -76,48 +76,24 @@ body { margin: 0; }
     }
   }
 
-  #new-environment-or-column {
-    @include flex-box-row;
-    -webkit-justify-content: flex-end;
-    justify-content: space-between;
-
-    color: white;
+  #create-column {
     background: $main-text-color;
-
-    div {
-      align-self: center;
-      display: inline-block;
       
-      &#new-column {
-        width: 50%;
-
-        input {
-          border: 1px solid $grey;
-          color: lighten($main-text-color, 20%);
-          font-size: 1em;
-          line-height: 1.35em;
-          margin: 10px 0 10px 10px;
-          padding: 10px;
-          width: 100%;
-        }
-        
-        .add-column { display: none; }
-      }
-      
-      &.new-environment {
-        @include transitions;
-        cursor: pointer;
-        font-size: 2em;
-        padding: 0 50px;
-        
-        &:hover {
-          color: $color0;
-        }
-      }
+    input {
+      border: 1px solid $grey;
+      color: lighten($main-text-color, 20%);
+      font-size: 1em;
+      line-height: 1.35em;
+      margin: 10px 4%;
+      padding: 10px;
+      width: 46%;
+      @media all and (max-width: 800px) { width: 92%; } // Small Size Screens
     }
+    
+    .add-column { display: none; }
   }
 
-  .columns {
+  #columns {
     @include flex-box-row;
     -webkit-justify-content: flex-start;
     justify-content: flex-start;
