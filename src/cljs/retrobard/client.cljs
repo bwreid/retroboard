@@ -73,10 +73,10 @@
                 (when (seq header)
                   (new-column (om/value connection) (temprid) header)
                   (om/set-state! owner :header "")))]
-        (dom/div nil
-                 (dom/label #js {:htmlFor "new-column"} "New Column")
-                 (dom/input #js {:id "new-column" :name "new-column"
+        (dom/div #js {:id "new-column"}
+                 (dom/input #js {:name "new-column"
                                  :type "text"
+                                 :placeholder "New Column"
                                  :value header
                                  :onKeyUp (fn [e]
                                             (when (= 13 (.-keyCode e))
@@ -96,7 +96,7 @@
       (let [{:keys [connection column-id]} app
             delete-column (fn []
                             (delete-column (om/value connection) column-id))]
-        (dom/button #js {:onClick delete-column
+        (dom/div #js {:onClick delete-column
                          :className "delete-column"}
                     "Delete Column")))))
 
@@ -112,8 +112,8 @@
                             (new-note (om/value connection) (temprid) column-id text)
                             (om/set-state! owner :text "")))]
         (dom/div nil
-                 (dom/label #js {:htmlFor "new-note"} "New Note")
                  (dom/input #js {:id "new-note" :name "new-note"
+                                 :placeholder "Enter your note here"
                                  :type "text"
                                  :value text
                                  :onKeyUp (fn [e]
@@ -122,7 +122,7 @@
                                  :onChange (fn [e]
                                              (om/set-state! owner :text
                                                             (.. e -target -value)))})
-                 (dom/button #js {:onClick create-note
+                 (dom/div #js {:onClick create-note
                                   :className "add-note"
                                   :disabled (empty? text)}
                              "Add note"))))))
@@ -134,9 +134,9 @@
       (let [{:keys [connection column-id note-id]} app
             delete-note (fn []
                           (delete-note (om/value connection) column-id note-id))]
-        (dom/button #js {:onClick delete-note
+        (dom/div #js {:onClick delete-note
                          :className "delete-note"}
-                    "Delete!")))))
+                    "✖")))))
 
 (defn create-vote-button [app owner]
   (reify
@@ -145,9 +145,9 @@
       (let [{:keys [connection column-id note-id]} app
             create-vote (fn []
                           (new-vote (om/value connection) (temprid) column-id note-id))]
-        (dom/button #js {:onClick create-vote
+        (dom/div #js {:onClick create-vote
                          :className "vote"}
-                    "Vote")))))
+                    "✚")))))
 
 (defn change-env [app env-id]
   (set! (.-pathname js/location) (str "e/" env-id)))
@@ -161,9 +161,10 @@
                          (go
                           (let [env-id (<! (new-environment @connection))]
                             (change-env app env-id))))]
-        (dom/button #js {:onClick create-env
-                         :className "new-environment"}
-                    "New Environment")))))
+        (dom/div #js {:onClick create-env
+                      :className "new-environment"
+                      :title "New Environment"}
+                    "✚")))))
 
 
 (defn display [show]
@@ -178,7 +179,6 @@
   (om/set-state! owner :editing false)
   (cb text))
 
-
 (defn editable [data owner {:keys [edit-key on-edit] :as opts}]
   (reify
     om/IInitState
@@ -187,12 +187,13 @@
     om/IRenderState
     (render-state [_ {:keys [editing]}]
       (let [text (get data edit-key)]
-        (dom/span nil
-                (dom/span #js {:style (display (not editing))
-                               :onClick (fn [el] (om/set-state! owner :editing true))}
+        (dom/div #js {:className "note-content"}
+                (dom/p #js {:style (display (not editing))
+                            :onClick (fn [el] (om/set-state! owner :editing true))}
                           text)
-                (dom/input
-                 #js {:style (display editing)
+                (dom/textarea
+                 #js {:className "edit-content-input"
+                      :style (display editing)
                       :value text
                       :onChange #(handle-change % data edit-key owner)
                       :onKeyPress #(when (== (.-keyCode %) 13)
@@ -200,8 +201,9 @@
                       :onBlur (fn [e]
                                 (when (om/get-state owner :editing)
                                   (end-edit text owner on-edit)))})
-                (dom/button
-                 #js {:style (display (not editing))
+                (dom/div
+                 #js {:className "edit-note-button"
+                      :style (display (not editing))
                       :onClick #(om/set-state! owner :editing true)}
                  "Edit"))))))
 
@@ -211,17 +213,20 @@
     (render [_]
       (let [{:keys [connection column-id note]} app
             [id note] note]
-        (dom/div #js {:className "note"}
-                 (om/build editable note
-                           {:opts {:edit-key :text
-                                   :on-edit (partial edit-note connection id column-id)}})
-                 (count (:votes note)) " votes!"
-                 (om/build create-vote-button {:connection connection
-                                               :column-id column-id
-                                               :note-id id})
-                 (om/build delete-note-button {:connection connection
-                                               :column-id column-id
-                                               :note-id id}))))))
+        (dom/div #js {:className "note-wrapper"}
+                 (dom/div {:className "note"}
+                          (om/build editable note
+                                    {:opts {:edit-key :text
+                                            :on-edit (partial edit-note connection id column-id)}}))
+                 (dom/div #js {:className "vote-delete-row"}
+                          (om/build create-vote-button {:connection connection
+                                                        :column-id column-id
+                                                        :note-id id})
+                          (dom/div #js {:className "votes"}
+                                   "+ " (count (:votes note)))
+                          (om/build delete-note-button {:connection connection
+                                                        :column-id column-id
+                                                        :note-id id})))))))
 
 (defn column-view [app owner]
   (reify
@@ -231,15 +236,15 @@
             [id column] column]
         (dom/div #js {:className "column"}
                  (dom/h1 nil (:header column))
-                 (om/build delete-column-button {:connection connection
-                                                 :column-id id})
+                 (om/build create-note-button {:connection connection
+                                               :column-id id})                 
                  (apply dom/div nil
                         (map (fn [note] (om/build note-view {:connection connection
                                                             :column-id id
                                                             :note note}))
                              (sort-by first (:notes column))))
-                 (om/build create-note-button {:connection connection
-                                               :column-id id}))))))
+                 (om/build delete-column-button {:connection connection
+                                                 :column-id id}))))))
 
 (defn view [app owner]
   (reify
@@ -260,17 +265,19 @@
     (render-state [this state]
       (let [connection (om/value (:connection app))
             columns (:state app)]
-        (dom/div nil
-                 (dom/div nil
-                          (om/build create-environment-button app))
+        (dom/div #js {:className "main"}
                  (if (:id app)
                    (dom/div nil
-                            (om/build create-column-button (:connection app))
-                            (apply dom/div nil
+                            (dom/div #js {:id "new-environment-or-column"}
+                                     (om/build create-column-button (:connection app))
+                                     (om/build create-environment-button app))
+                            (apply dom/div #js {:className "columns"}
                                    (map (fn [col]
                                           (om/build column-view {:connection connection
                                                                  :column col}))
-                                        (sort-by first columns))))))))))
+                                        (sort-by first columns))))
+                   (dom/div nil
+                            (om/build create-environment-button app))))))))
 
 (def app-state (atom {:state {} :connection (web-socket)}))
 
