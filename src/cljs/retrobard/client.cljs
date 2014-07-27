@@ -65,12 +65,14 @@
 
 
 (defn column-placeholder []
-  (first (shuffle ["What Went Well"
-                   "What Needs Improvement"
-                   "Action Items"
-                   "Keep Doing"
-                   "Start Doing"
-                   "Stop Doing"])))
+  (str "Add a Column (e.g. "
+       (first (shuffle ["What Went Well"
+                        "What Needs Improvement"
+                        "Action Items"
+                        "Keep Doing"
+                        "Start Doing"
+                        "Stop Doing"]))
+       ")"))
 
 (defn create-column-button [connection owner]
   (reify
@@ -85,7 +87,7 @@
         (dom/div #js {:id "create-column"}
                  (dom/input #js {:id "new-column" :name "new-column"
                                  :type "text"
-                                 :placeholder "Add a new column"
+                                 :placeholder (column-placeholder)
                                  :value header
                                  :onKeyUp (fn [e]
                                             (when (= 13 (.-keyCode e))
@@ -112,7 +114,9 @@
   (first (shuffle ["I just think that..."
                    "What if we..."
                    "Why do we always..."
-                   "Maybe next time we could..."])))
+                   "Maybe next time we could..."
+                   "I like that we..."
+                   "We're doing better about..."])))
 
 (defn create-note-button [app owner]
   (reify
