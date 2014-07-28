@@ -178,11 +178,10 @@
             create-env (fn []
                          (go
                           (let [env-id (<! (new-environment @connection))]
-                            (change-env app env-id))))]
-        (dom/div #js {:onClick create-env
-                      :className "new-environment"
-                      :title "New Environment"}
-                    "✚")))))
+                            (change-env env-id))))]
+        (dom/button #js {:onClick create-env
+                         :className "new-environment"}
+                    "New Environment")))))
 
 (defn display [show]
   (if show
@@ -294,7 +293,7 @@
     (render-state [this state]
       (let [connection (om/value (:connection app))
             columns (:state app)]
-        (dom/div #js {:className "main"}
+        (dom/div nil
                  (if (:id app)
                    (case (:connected app)
                      nil
@@ -308,7 +307,9 @@
                                      (map (fn [col]
                                             (om/build column-view {:connection connection
                                                                    :column col}))
-                                          (sort-by first columns)))))))))))
+                                          (sort-by first columns)))))
+                   (dom/div nil
+                            (om/build create-environment-button app))))))))
 
 (def app-state (atom {:state {} :connection (web-socket)}))
 
