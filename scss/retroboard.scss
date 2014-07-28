@@ -125,13 +125,16 @@ body { margin: 0; }
         &:hover { color: darken($grey, 40%); }
       }
 
-      input#new-note {
+      textarea#new-note {
         color: lighten($main-text-color, 20%);
         border: 2px solid $grey;
+        font-family: $main-text-font;
         font-size: 1em;
+        height: 100px;
         line-height: 1.35em;
         margin: 0px;
         padding: 10px;
+        resize: none;
         width: 100%;
       }
 
@@ -183,16 +186,16 @@ body { margin: 0; }
         }
       }
 
-      &:nth-child(n+1) { @include color-swap($color0); }
-      &:nth-child(n+2) { @include color-swap($color1); }
-      &:nth-child(n+3) { @include color-swap($color2); }
-      &:nth-child(n+4) { @include color-swap($color3); }
-      &:nth-child(n+5) { @include color-swap($color4); }
-      &:nth-child(n+6) { @include color-swap($color5); }
-      &:nth-child(n+7) { @include color-swap($color6); }
-      &:nth-child(n+8) { @include color-swap($color7); }
-      &:nth-child(n+9) { @include color-swap($color8); }
-      &:nth-child(n+10) { @include color-swap($color9); }
+      &:nth-child(10n+1) { @include color-swap($color0); }
+      &:nth-child(10n+2) { @include color-swap($color1); }
+      &:nth-child(10n+3) { @include color-swap($color2); }
+      &:nth-child(10n+4) { @include color-swap($color3); }
+      &:nth-child(10n+5) { @include color-swap($color4); }
+      &:nth-child(10n+6) { @include color-swap($color5); }
+      &:nth-child(10n+7) { @include color-swap($color6); }
+      &:nth-child(10n+8) { @include color-swap($color7); }
+      &:nth-child(10n+9) { @include color-swap($color8); }
+      &:nth-child(10n+10) { @include color-swap($color9); }
       
       .delete-column {
         @include condensed-text;

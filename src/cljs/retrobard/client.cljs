@@ -130,20 +130,20 @@
                             (new-note (om/value connection) (temprid) column-id text)
                             (om/set-state! owner :text "")))]
         (dom/div nil
-                 (dom/input #js {:id "new-note" :name "new-note"
-                                 :placeholder (note-placeholder)
-                                 :type "text"
-                                 :value text
-                                 :onKeyUp (fn [e]
-                                            (when (= 13 (.-keyCode e))
-                                              (create-note)))
-                                 :onChange (fn [e]
-                                             (om/set-state! owner :text
-                                                            (.. e -target -value)))})
+                 (dom/textarea #js {:id "new-note" :name "new-note"
+                                    :placeholder (note-placeholder)
+                                    :type "text"
+                                    :value text
+                                    :onKeyUp (fn [e]
+                                               (when (= 13 (.-keyCode e))
+                                                 (create-note)))
+                                    :onChange (fn [e]
+                                                (om/set-state! owner :text
+                                                               (.. e -target -value)))})
                  (dom/div #js {:onClick create-note
-                                  :className "add-note"
-                                  :disabled (empty? text)}
-                             "Add note"))))))
+                               :className "add-note"
+                               :disabled (empty? text)}
+                          "Add note"))))))
 
 (defn delete-note-button [app owner]
   (reify
